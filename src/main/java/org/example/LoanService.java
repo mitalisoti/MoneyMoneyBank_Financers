@@ -4,13 +4,16 @@ import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class LoanService {
+    public Users users;
     Connection connection;
-    Scanner scanner = new Scanner(System.in);
-    Users users = new Users(connection, scanner);
+    Scanner scanner;
+
 
     public LoanService(Connection connection, Scanner scanner) {
         this.connection = connection;
         this.scanner = scanner;
+        this.users = new Users(connection, scanner);
+
     }
 
     public void applyLoan(String email) throws SQLException {
@@ -40,41 +43,41 @@ public class LoanService {
 
         long accountNumber = Accounts.get_account_number(email);
 
-        String applyLoanQuery = "INSERT INTO loans (email, account_number, loan_amount, interest_rate, loan_term, loan_balance, loan_start_date, loan_end_date, emi_amount, status) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(applyLoanQuery)) {
-            preparedStatement.setString(1, email);
-            preparedStatement.setLong(2, accountNumber);
-            preparedStatement.setDouble(3, loanAmount);
-            preparedStatement.setDouble(4, annualInterestRate);
-            preparedStatement.setInt(5, term);
-            preparedStatement.setDouble(6, loanAmount);
-            preparedStatement.setDate(7, loanStartDate);
-            preparedStatement.setDate(8, loanEndDate);
-            preparedStatement.setDouble(9, Math.round(monthlyRepayment * 100.0) / 100.0);
+        System.out.println("Thank you for your loan application.");
+        System.out.println("Your EMI schedule will be:");
+        System.out.println("Loan Amount: " + loanAmount);
+        System.out.println("Loan Term: " + term + " months");
+        System.out.println("Monthly EMI: " + (Math.round(monthlyRepayment * 100.0) / 100.0));
+        System.out.println("First repayment due on: " + java.time.LocalDate.now().plusMonths(1));
+        System.out.println("Please confirm your loan application. (Y/N)");
 
-            int rowsAffected = preparedStatement.executeUpdate();
-            if (rowsAffected > 0) {
-                System.out.println("Thank you for your loan application.");
-                System.out.println("Your EMI schedule will be:");
-                System.out.println("Loan Amount: " + loanAmount);
-                System.out.println("Loan Term: " + term + " months");
-                System.out.println("Monthly EMI: " + (Math.round(monthlyRepayment * 100.0) / 100.0));
-                System.out.println("First repayment due on: " + java.time.LocalDate.now().plusMonths(1));
-                System.out.println("Please confirm your loan application. (Y/N)");
+        scanner.nextLine(); // Consume newline
+        if (scanner.nextLine().equalsIgnoreCase("Y")) {
+            String applyLoanQuery = "INSERT INTO loans (email, account_number, loan_amount, interest_rate, loan_term, loan_balance, loan_start_date, loan_end_date, emi_amount, status) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')";
+            try (PreparedStatement preparedStatement = connection.prepareStatement(applyLoanQuery)) {
+                preparedStatement.setString(1, email);
+                preparedStatement.setLong(2, accountNumber);
+                preparedStatement.setDouble(3, loanAmount);
+                preparedStatement.setDouble(4, annualInterestRate);
+                preparedStatement.setInt(5, term);
+                preparedStatement.setDouble(6, loanAmount);
+                preparedStatement.setDate(7, loanStartDate);
+                preparedStatement.setDate(8, loanEndDate);
+                preparedStatement.setDouble(9, Math.round(monthlyRepayment * 100.0) / 100.0);
 
-                scanner.nextLine(); // Consume newline
-                if (scanner.nextLine().equalsIgnoreCase("Y")) {
+                int rowsAffected = preparedStatement.executeUpdate();
+                if (rowsAffected > 0) {
                     System.out.println("Your loan application is successful. Your application is pending for approval.");
                 } else {
-                    System.out.println("Thank you for your response.");
+                    System.out.println("Loan application failed. Please try again.");
                 }
-            } else {
-                System.out.println("Loan application failed. Please try again.");
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.out.println("An error occurred during loan application. Please contact support.");
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.out.println("An error occurred during loan application. Please contact support.");
+        } else {
+            System.out.println("Thank you for your response. Your loan application has been canceled.");
         }
     }
 
@@ -157,16 +160,12 @@ public class LoanService {
         }
     }
 
-
-
     private double calculateMonthlyRepayment(double loanAmount, int term, double annualInterestRate) {
         double monthlyInterestRate = annualInterestRate / 100/ 12;
         int numberOfPayments = term;
         double monthlyRepayment = (loanAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments)) /
                 (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
         return Math.round(monthlyRepayment * 100.0) / 100.0;
-
-
     }
 
     public void repayLoan(String email) {
@@ -184,7 +183,7 @@ public class LoanService {
                 double emiAmount = resultSet.getDouble("emi_amount"); // Retrieve EMI
                 String status = resultSet.getString("status");
                 if("pending".equalsIgnoreCase(status)) {
-                    System.out.println("Loan " + email + " has been pending to approve.");
+                    System.out.println("Loan for " + email + " is pending for further approval. You will be notified as soon as it gets approve");
                     return;
                 }
 

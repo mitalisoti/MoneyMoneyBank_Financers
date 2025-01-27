@@ -71,9 +71,9 @@ public class Accounts {
 
         }
         if(!account_exist(email)){
-            String open_account_query = "INSERT INTO ACCOUNTS(account_number, full_name, email, balance, security_pin) VALUES(?,?,?,?,?)";
+            String open_account_query = "INSERT INTO ACCOUNTS(account_number,full_name, email, balance, security_pin) VALUES(?,?,?,?,?)";
             scanner.nextLine();
-            System.out.println("Enter your Full Name: ");
+            System.out.println("Enter your Name as mentioned in the ID: ");
             String full_name = scanner.nextLine();
             double balance= -1;
             if(balance<=0){

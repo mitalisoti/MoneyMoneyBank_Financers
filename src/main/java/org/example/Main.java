@@ -20,11 +20,12 @@ public class Main {
             LoanService loanService = new LoanService(connection, scanner);
 
             while (true) {
-                System.out.println("\n** WELCOME TO MONEY MONEY BANK'S ONLINE BANKING **");
+                System.out.println("\n** WELCOME TO MONEY-MONEY BANK'S ONLINE BANKING **");
                 System.out.println("1. Register");
                 System.out.println("2. Login as User");
                 System.out.println("3. Login as Admin");
-                System.out.println("4. Exit");
+                System.out.println("4. Update password");
+                System.out.println("5. Exit");
                 System.out.print("Enter your choice: ");
 
                 int choice = getValidChoice(scanner, 1, 4);
@@ -61,6 +62,19 @@ public class Main {
                         break;
 
                     case 4:
+                        scanner.nextLine();
+                        System.out.print("Please enter your email: ");
+                        String email = scanner.nextLine().trim();
+
+                        // Validate email input
+                        if (email.isEmpty()) {
+                            System.out.println("Email cannot be empty. Please try again.");
+                        } else {
+                            users.updatePassword(email); // Call the update password method
+                        }
+                        break;
+
+                    case 5:
                         System.out.println("Thank you for banking with us. Goodbye!");
                         return;
 

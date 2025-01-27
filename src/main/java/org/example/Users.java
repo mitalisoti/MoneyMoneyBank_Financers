@@ -1,11 +1,9 @@
 package org.example;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Scanner;
-
 
 public class Users {
     private Connection connection;
@@ -13,11 +11,9 @@ public class Users {
     private String loggedInEmail;
 
     public Users(Connection connection, Scanner scanner) {
-
         this.connection = connection;
         this.scanner = scanner;
         this.loggedInEmail = null;
-
     }
 
     public void register() {
@@ -46,35 +42,23 @@ public class Users {
             System.out.println("Email already exists!");
             return;
         }
-        int roleId;
-        while (true) {
-            System.out.println("Please enter your role (1 for Admin, 2 for User): ");
-            roleId = scanner.nextInt();
-            if (roleId == 1 || roleId == 2) {
-                break;
-            } else {
-                System.out.println("Invalid role selected! Please try again.");
-            }
-        }
 
-        String register_query = "INSERT INTO users (full_name, email, password, role_id) VALUES (?, ?, ?, ?)";
+        String register_query = "INSERT INTO users (full_name, email, password) VALUES (?, ?, ?)";
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(register_query);
             preparedStatement.setString(1, full_name);
             preparedStatement.setString(2, email);
             preparedStatement.setString(3, password);
-            preparedStatement.setInt(4, roleId);
+
             int affected = preparedStatement.executeUpdate();
             if (affected > 0) {
                 System.out.println("User registered successfully!");
             } else {
                 System.out.println("Something went wrong! Registration failed! Please try again!");
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     public String login(Scanner scanner) {
@@ -94,7 +78,9 @@ public class Users {
                 this.loggedInEmail = email; // Store the logged-in email
                 Long accountNumber = Accounts.get_account_number(email);
                 System.out.println("Login successful. Welcome, " + resultSet.getString("full_name") + "!");
-                System.out.println("Your account number is " + accountNumber);
+                if (!Accounts.account_exist(email)) {
+                    System.out.println("Seems you have not opened an account yet! Please open an account first.");
+                }
                 return email;
             } else {
                 return null;
@@ -103,7 +89,6 @@ public class Users {
             throw new RuntimeException(e);
         }
     }
-
 
     private boolean user_exist(String email) {
         String query = "SELECT * FROM users WHERE email = ?";
@@ -140,5 +125,65 @@ public class Users {
         }
         return false;
     }
-}
+
+    public void updatePassword(String email) {
+        try {
+            System.out.println("Please enter your current password: ");
+            String currentPassword = scanner.nextLine().trim(); // Read current password
+
+                if (currentPassword.isEmpty()) {
+                    System.out.println("Current password cannot be empty. Please try again.");
+                    return;
+                }
+                System.out.println("Please enter your new password: ");
+                String newPassword = scanner.nextLine().trim(); // Read new password
+
+                if (newPassword.isEmpty()) {
+                    System.out.println("New password cannot be empty. Please try again.");
+                    return;
+                }
+
+                // Check if the current password matches the stored password
+                String query = "SELECT password FROM users WHERE email = ?";
+                try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                    preparedStatement.setString(1, email);
+                    ResultSet resultSet = preparedStatement.executeQuery();
+
+                    if (resultSet.next()) {
+                        String storedPassword = resultSet.getString("password");
+
+                        // Compare the entered current password with the stored password
+                        if (!storedPassword.equals(currentPassword)) {
+                            System.out.println("Current password is incorrect. Please try again.");
+                            return;
+                        }
+                    } else {
+                        System.out.println("User with the given email does not exist.");
+                        return;
+                    }
+                }
+
+                // Update the password
+                String updateQuery = "UPDATE users SET password = ? WHERE email = ?";
+                try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
+                    updateStatement.setString(1, newPassword);
+                    updateStatement.setString(2, email);
+
+                    int rowsAffected = updateStatement.executeUpdate();
+                    if (rowsAffected > 0) {
+                        System.out.println("Password updated successfully!");
+                    } else {
+                        System.out.println("Something went wrong. Please try again.");
+                    }
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                System.out.println("An error occurred while updating the password.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Unexpected error occurred.");
+            }
+        }
+
+    }
 

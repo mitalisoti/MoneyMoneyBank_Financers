@@ -1,5 +1,4 @@
 package org.example;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -91,11 +90,28 @@ public class AccountManager {
     }
 
     public void debit_money(long account_number) {
-        System.out.println("Enter the amount you want to withdraw: ");
-        double amount = scanner.nextDouble();
-        scanner.nextLine();
+        double amount = 0;
+        String security_pin;
+
+        // Prompt for the amount with validation
+        while (true) {
+            System.out.println("Enter the amount you want to withdraw: ");
+            if (scanner.hasNextDouble()) {
+                amount = scanner.nextDouble();
+                scanner.nextLine();
+                if (amount > 0) {
+                    break;
+                } else {
+                    System.out.println("Amount must be greater than zero. Please try again.");
+                }
+            } else {
+                System.out.println("Invalid input! Please enter a valid number.");
+                scanner.next();
+            }
+        }
+
         System.out.println("Enter the security pin: ");
-        String security_pin = scanner.nextLine();
+        security_pin = scanner.nextLine();
 
         try {
             connection.setAutoCommit(false);
